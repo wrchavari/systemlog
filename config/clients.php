@@ -2,13 +2,13 @@
 
     return [
         [
-            'id' => 6800,
-            'name' => 'Comercial Krill',
+            'id' => 1,
+            'name' => 'Cliente 1',
             'ftp' => [
-                'host' => 'comercialkrill.futurasistemas.com.br',
-                'username' => 'loja@comercialkrill.futurasistemas.com.br',
-                'password' => 'MTMwOTM0NTgxOA==68@',
-                'dir' => '/system/logs/',
+                'host' => 'host.ftp.com.br',
+                'username' => 'usuario',
+                'password' => 'senha',
+                'dir' => 'caminho/para/logs',
             ],
         ]
     ];
