@@ -24,13 +24,13 @@
     $clientes = require __DIR__ . '/../config/clients.php';
 
     foreach ($clientes as $cliente) {
-        log_msg("Processando cliente: {$cliente['nome']} (ID: {$cliente['id']})", "INFO");
+        log_msg("Processando cliente: {$cliente['name']} (ID: {$cliente['id']})", "INFO");
         $conn = conectarFtp($cliente);
         if (!$conn) continue;
 
         $arquivos = listarArquivosFtp($conn, $cliente['ftp']['dir']);
         if (!$arquivos) {
-            log_msg("Nenhum arquivo encontrado em {$cliente['ftp_dir']}", "INFO");
+            log_msg("Nenhum arquivo encontrado em {$cliente['ftp']['dir']}", "INFO");
             ftp_close($conn);
             continue;
         }
@@ -43,11 +43,11 @@
 
         foreach ($arquivos as $arquivo) {
             // Filtra arquivos de log: AAAA-MM-DD_error*.txt
-            if (!preg_match('/(\d{4})-(\d{2})-(\d{2})_error.*\.txt$/', $arquivo, $matches)) continue;
+            if (!preg_match('/(\d{4})-(\d{2})-(\d{2})_(error.*\.txt)$/i', $arquivo, $matches)) continue;
 
             $dataFormatada = $matches[1] . $matches[2] . $matches[3]; //AAAAMMDD
-            $sufixo = substr($arquivo, 10); // _error*.txt
-            $nomeLocal = $pastaLocal . $cliente['id'] . '_' . $dataFormatada . $sufixo;
+            $sufixo = $matches[4]; // error*.txt
+            $nomeLocal = $pastaLocal . $cliente['id'] . '_' . $dataFormatada . '_' . $sufixo;
 
             $remoteSize = ftp_size($conn, $arquivo);
             if ($remoteSize == -1) continue;
@@ -58,7 +58,7 @@
                 // Baixar apenas o trecho novo do arquivo
                 $fp = fopen($nomeLocal . '.tmp', 'w+');
                 // Pula para o offset desejado no remoto
-                if (ftp_get($conn, $fp, $arquivo, FTP_ASCII, $lastOffset)) {
+                if (ftp_fget($conn, $fp, $arquivo, FTP_ASCII, $lastOffset)) {
                     $newData = file_get_contents($nomeLocal . '.tmp');
                     if ($newData !== false && strLen($newData) > 0) {
                         file_put_contents($nomeLocal, $newData, FILE_APPEND);
@@ -76,15 +76,15 @@
                 log_msg("Nenhum dado novo para $arquivo (offset $lastOffset, size $remoteSize)", "INFO");
             }
 
-            // Excluir arquivo remoto se tem mais de 2 dias
-            $dataRemota = dataArquivo($conn, $arquivo);
-            if ($dataRemota != -1 && $dataRemota < strtotime('-2 days')) {
-                if (excluirArquivoFtp($conn, $arquivo)) {
-                    log_msg("Arquivo remoto $arquivo excluído com sucesso", "INFO");
-                } else {
-                    log_msg("Erro ao excluir arquivo remoto $arquivo", "ERROR");
-                }
-            }
+            // // Excluir arquivo remoto se tem mais de 2 dias
+            // $dataRemota = dataArquivo($conn, $arquivo);
+            // if ($dataRemota != -1 && $dataRemota < strtotime('-2 days')) {
+            //     if (excluirArquivoFtp($conn, $arquivo)) {
+            //         log_msg("Arquivo remoto $arquivo excluído com sucesso", "INFO");
+            //     } else {
+            //         log_msg("Erro ao excluir arquivo remoto $arquivo", "ERROR");
+            //     }
+            // }
         }
         ftp_close($conn);
     }
