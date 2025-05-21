@@ -1,9 +1,47 @@
 services:
   php:
-    build: .
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
     volumes:
       - ./src:/var/www/html/src
       - ./config:/var/www/html/config
       - ./logs:/var/www/html/logs
+      - ./docker/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
     working_dir: /var/www/html/src
     command: ["php", "main.php"]
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.13.4
+    user: root
+    volumes:
+      - ./logs:/logs:ro
+      - ./docker/filebeat.yml:/usr/share/filebeat/filebeat.yml
+    depends_on:
+      - elasticsearch
+    command: ["sh", "-c", "chmod go-w /usr/share/filebeat/filebeat.yml && filebeat"]
+
+volumes:
+  esdata:

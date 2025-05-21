@@ -1,0 +1,22 @@
+filebeat.inputs:
+  - type: filestream
+    id: logs-php-clientes
+    paths:
+      - /logs/*/*.txt
+    exclude_files: ['\.offset$']
+    fields_under_root: true
+    fields:
+      origem: app_php_logs
+
+processors:
+  - dissect:
+      tokenizer: "/logs/%{cliente}/%{cliente}_%{data}_%{rest}"
+      field: "log.file.path"
+      target_prefix: "logfile"
+      ignore_failure: true
+
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+
+setup.kibana:
+  host: "kibana:5601"
