@@ -1,0 +1,9 @@
+services:
+  php:
+    build: .
+    volumes:
+      - ./src:/var/www/html/src
+      - ./config:/var/www/html/config
+      - ./logs:/var/www/html/logs
+    working_dir: /var/www/html/src
+    command: ["php", "main.php"]
